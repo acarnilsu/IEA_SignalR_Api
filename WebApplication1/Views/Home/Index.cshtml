@@ -12,11 +12,17 @@
  
             var connection = new signalR.HubConnectionBuilder().withAutomaticReconnect([1000,2000,3000,6000]).withUrl("https://localhost:44333/MyHub").build();
  
-            $("#conStatus").text(connection.connectionState);
+            function statusShow() {
+                $("#conStatus").text(connection.connectionState);
+            }
+ 
+           
+            statusShow();
  
             connection.start().then(() => {
-                $("#conStatus").text(connection.connectionState);
+                statusShow();
                 $("#loading").hide();
+                connection.invoke("GetNames");
             }).catch((err) => { console.log(err) });
  
             $("#btnSave").click(() => {
@@ -33,20 +39,50 @@
  
             connection.onreconnecting(err => {
                 $("#loading").show();
-                $("#conStatus").text(connection.connectionState);
+                statusShow();
                 console.log(err);
             })
  
             connection.onreconnected(err => {
                 $("#loading").hide();
-                $("#conStatus").text(connection.connectionState);
+                statusShow();
             })
  
             connection.onclose(err => {
                 $("#loading").hide();
-                $("#conStatus").text(connection.connectionState);
+                statusShow();
             })
  
+            connection.on("ReceiveClientCount", (ClientCount) => {
+                $("#clientCount").text(ClientCount);
+            })
+ 
+            connection.on("Notify", (countText) => {
+                $("#notify").html(`<div class="alert alert-success">${countText}</div>`)
+            })
+ 
+            connection.on("Error", (errorText) => {
+                alert(errorText);
+            })
+
+            connection.on("ReceiveNames", (names) => {
+                $("#namesList").empty();
+                names.forEach((item, index) => {
+                    $("#namesList").append(`<li class="list-group-item">${item}</li>`)
+                })
+            })
+ 
+            $("#btnroomname").click(() => {
+                let name = $("#txtname").val();
+                let roomname = $("input[type=radio]:checked").val();
+                if (roomname == null) {
+                    alert("Şehir Seçimi Yapınız");
+                    return;
+                }
+                connection.invoke("SendNameByGroup", name, roomname).catch((err) => {
+                    console.log(err);
+                })
+            })
         })
  
     </script>
@@ -58,6 +94,7 @@
         <input type="text" class="form-control" id="txtname" />
         <hr />
         <button class="btn btn-warning" id="btnSave">İsim Kaydet</button>
+        <button class="btn btn-danger" id="btnroomname">Odaya Kaydet</button>
         <div class="alert alert-info mt-2">
             <div class="float-left">
                 Bağlantı Durumu:<strong id="conStatus"></strong>
@@ -70,8 +107,26 @@
             </div>
             <div class="clearfix"></div>
         </div>
+        <div id="notify"></div>
     </div>
     <div class="col-md-8 offset-2">
         <ul class="list-group" id="namesList"></ul>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-8 offset-2">
+ 
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="roomgroup" value="Ankara" />
+            <label class="form-check-label">Ankara Odası</label>
+        </div>
+        
+        <div class="form-check-inline">
+            <input class="form-check-input" type="radio" name="roomgroup" value="Bursa" />
+            <label class="form-check-label">Bursa Odası</label>
+        </div>
+ 
     </div>
 </div>
