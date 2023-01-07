@@ -80,5 +80,15 @@ namespace IEA_SignalR_Api.Hubs
             });
             await Clients.All.SendAsync("ReceiveNamesByGroup", rooms);
         }
+
+        public async Task AddToGroup(string roomName)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
+        }
+
+        public async Task RemoveToGroup(string roomName)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
+        }
     }
 }
